@@ -1,0 +1,647 @@
+---
+title: "Semen microbiome - Regression analysis - Genera Level"
+output: html_notebook
+---
+
+
+```{r "setup", include=FALSE}
+require("knitr")
+opts_knit$set(root.dir='./')
+```
+
+### Import the required packages
+```{r, include=FALSE}
+library(readr)
+library(readxl)
+library(ggplot2)
+library(BiocParallel)
+library(propr)
+library(emmeans)
+
+dir.create('../Results/Regression_Analysis')
+dir.create('../Analysis Figures/Regression_Analysis/')
+```
+
+### Load the  16S data matrix
+```{r, message=FALSE, warning=FALSE}
+
+# Read the 16Sdataset
+semen16s_GeneraLevel <- read_csv("../../Data/Genera_Counts_Table.csv")
+
+semen16s_speciesInfo <- read_csv("../../Data/Genera_Taxonomy.csv")
+
+
+# Load the study covariates
+studyMetadata <- read_csv("../../Data/ClinicalData.csv")
+
+```
+
+### Filter the dataset
+```{r}
+# Percentage of samples containing counts (> 0) from a species to keep
+minPrevalence <- 0.25
+minPrevalence <- dim(semen16s_GeneraLevel)[1]*minPrevalence
+
+# Column index for features passing prevalence filter
+columnsPassPrevalence <- names(which(colSums(semen16s_GeneraLevel[, 4:ncol(semen16s_GeneraLevel)] > 0) >= minPrevalence))
+columnsFailPrevalence <- names(which(colSums(semen16s_GeneraLevel[, 4:ncol(semen16s_GeneraLevel)] > 0) < minPrevalence))
+
+detectMatrix <- cbind(semen16s_GeneraLevel[, 1:3], semen16s_GeneraLevel[, 4:ncol(semen16s_GeneraLevel)] > 0)
+
+detectMatrix <- merge(studyMetadata, detectMatrix, by="Sample Name")
+
+colnames(detectMatrix)[colnames(detectMatrix) == 'ROS...10'] <- 'ROS'
+colnames(detectMatrix)[colnames(detectMatrix) == 'ROS...24'] <- 'ROSContinuous'
+detectMatrix$ROSContinuous <- as.numeric(detectMatrix$ROSContinuous)
+
+
+write.csv(detectMatrix, file='../../Data/GeneraPrevalence_RegressionMatrix.csv')
+
+```
+## Apply the CLR transform using the propr package
+```{r}
+# Use the propr package
+rho <- propr(semen16s_GeneraLevel[, columnsPassPrevalence], metric = "rho", ivar="clr")
+
+clrDataMatrix <- cbind(`Sample Name`=semen16s_GeneraLevel$`Sample Name`, rho@logratio)
+
+# clrDataMatrix <- merge(studyMetadata, clrDataMatrix, by="SampleID")
+clrDataMatrix <- merge(studyMetadata, clrDataMatrix, by.x="Sample Name", by.y="Sample Name")
+
+rm(rho)
+
+# Column index where the microbiome data starts in the dataframe
+colnames(clrDataMatrix)[colnames(clrDataMatrix) == 'ROS...10'] <- 'ROS'
+colnames(clrDataMatrix)[colnames(clrDataMatrix) == 'ROS...24'] <- 'ROSContinuous'
+clrDataMatrix$ROSContinuous <- as.numeric(clrDataMatrix$ROSContinuous)
+
+write.csv(clrDataMatrix, file='../../Data/GeneraCLR_RegressionMatrix.csv')
+
+```
+## Regressions between CLR transformed Genera level counts and ROS 
+```{r}
+firstMicrobeColumnIdx <- 28
+lmModelsROS <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  dataSet[dataSet$`ROS` == "no data", "ROS"] <- NA
+  linearModel <- lm(get(currVar) ~ ROS , data=dataSet, na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Genera=currVar, ROS_t = Modelsummary$coefficients[2, 3], ROS_pval = Modelsummary$coefficients[2, 4])
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleRegressionROS <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsROS, dataSet=clrDataMatrix)
+multipleRegressionROS <- as.data.frame(do.call(rbind, multipleRegressionROS))
+multipleRegressionROS$ROS_qval <- p.adjust(as.numeric(multipleRegressionROS$ROS_pval), method='BH')
+
+write.csv(multipleRegressionROS, '../Results/Regression_Analysis/ROS_LM_Genera.csv')
+
+multipleRegressionROS[as.numeric(multipleRegressionROS$ROS_qval) < 0.05, ]
+# multipleRegressionROS[multipleRegressionROS$ROS_qval < 0.05, ]
+```
+
+```{r, echo=FALSE}
+#boxplot1 <- ggplot(subset(clrDataMatrix, `ROS.x` != 'no data'), aes(x=`ROS`, y=`Corynebacterium`, color=`ROS.x`)) + geom_boxplot(outlier.shape=NA, #alpha=0.4) + theme_minimal() + geom_jitter(aes(color=`ROS.x`)) + scale_colour_discrete(name='ROS') + xlab('Reactive oxygen species (ROS)')
+
+#boxplot2 <- ggplot(subset(clrDataMatrix, `ROS.x` != 'no data'), aes(x=`ROS`, y=`Lactobacillus`, color=`ROS.x`)) + geom_boxplot(outlier.shape=NA, #alpha=0.4) + theme_minimal() + geom_jitter(aes(color=`ROS.x`)) + scale_colour_discrete(name='ROS') + xlab('Reactive oxygen species (ROS)')
+
+#ggsave('../Analysis Figures/Regression_Analysis/Genera_Corynebacterium_ROS.svg', boxplot1, dpi=300)
+#ggsave('../Analysis Figures/Regression_Analysis/Genera_Lacto_ROS.svg', boxplot2, dpi=300)
+``` 
+
+### ROS - Control vs Male Infertility group only
+```{r}
+# Analysis using only Control vs Male Factor
+multipleRegressionROS <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsROS, dataSet=subset(clrDataMatrix, Classification %in% c('Control', 'Male factor')))
+multipleRegressionROS <- as.data.frame(do.call(rbind, multipleRegressionROS))
+multipleRegressionROS$ROS_qval <- p.adjust(as.numeric(multipleRegressionROS$ROS_pval), method='BH')
+
+write.csv(multipleRegressionROS, '../Results/Regression_Analysis/ROS_LM_Genera_ControlvsMaleFactor.csv')
+
+multipleRegressionROS[as.numeric(multipleRegressionROS$ROS_qval) < 0.05, ]
+# multipleRegressionROS[multipleRegressionROS$ROS_qval < 0.05, ]
+```
+
+
+## ROS - continuous value regression
+```{r}
+firstMicrobeColumnIdx <- 28
+
+
+lmModelsROS_Continuous <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  
+  linearModel <- lm(get(currVar) ~ log(ROSContinuous), data=dataSet, na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Genera=currVar, ROS_Continuous_t = Modelsummary$coefficients[2, 3], ROS_Continuous_pval = Modelsummary$coefficients[2, 4])
+  return(ModelResults)
+}
+
+
+multicoreParam <- MulticoreParam()
+
+multipleRegressionROS_Continuous <-bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsROS_Continuous, dataSet=clrDataMatrix)
+multipleRegressionROS_Continuous <- as.data.frame(do.call(rbind, multipleRegressionROS_Continuous))
+multipleRegressionROS_Continuous$ROS_qval <- p.adjust(as.numeric(multipleRegressionROS_Continuous$ROS_Continuous_pval), method='BH')
+
+write.csv(multipleRegressionROS_Continuous, '../Results/Regression_Analysis/ROS_Continuous_LM_Genera.csv')
+
+multipleRegressionROS_Continuous[as.numeric(multipleRegressionROS_Continuous$ROS_Continuous_pval) < 0.05, ]
+```
+
+
+```{r, echo=FALSE}
+#scatter1 <- ggplot(subset(clrDataMatrix, `ROS.y` != 'no data'), aes(x=as.numeric(Corynebacterium), y=`ROS.y`)) + geom_point(color='steelblue') + #theme_minimal() + scale_y_log10() + ylab('Reactive oxygen species (ROS)') + xlab('Corynebacterium') # + geom_smooth(method='lm')
+#ggsave('../Analysis Figures/Regression_Analysis/Genera_Corynebacterium_ROSCont.svg', scatter1, dpi=300)
+
+```
+
+### ROS - continuous value regression - Control vs Male Infertility
+```{r}
+
+multipleRegressionROS_Continuous <-bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsROS_Continuous, dataSet=subset(clrDataMatrix, Classification %in% c('Control', 'Male factor')))
+multipleRegressionROS_Continuous <- as.data.frame(do.call(rbind, multipleRegressionROS_Continuous))
+multipleRegressionROS_Continuous$ROS_qval <- p.adjust(as.numeric(multipleRegressionROS_Continuous$ROS_Continuous_pval), method='BH')
+
+write.csv(multipleRegressionROS_Continuous, '../Results/Regression_Analysis/ROS_Continuous_LM_GeneraControlvsMaleFactor.csv')
+
+multipleRegressionROS_Continuous[as.numeric(multipleRegressionROS_Continuous$ROS_Continuous_pval) < 0.05, ]
+
+```
+
+## DNA Fragmentation
+```{r}
+firstMicrobeColumnIdx <- 28
+
+lmModelsDNAFrag <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  dataSet[dataSet$`DNA Fragmentation` == "No data", "DNA Fragmentation"] <- NA
+  linearModel <- lm(get(currVar) ~ `DNA Fragmentation` , data=dataSet, na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Genera=currVar, DNAFrag_t = Modelsummary$coefficients[2, 3], DNAFrag_pval = Modelsummary$coefficients[2, 4])
+  return(ModelResults)
+}
+
+multipleRegressionDNAFrag <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsDNAFrag, dataSet=clrDataMatrix)
+multipleRegressionDNAFrag <- as.data.frame(do.call(rbind, multipleRegressionDNAFrag))
+multipleRegressionDNAFrag$DNAFrag_qval <- p.adjust(as.numeric(multipleRegressionDNAFrag$DNAFrag_pval), method='BH')
+
+write.csv(multipleRegressionDNAFrag, '../Results/Regression_Analysis/DNAFragLM_Genera.csv')
+
+multipleRegressionDNAFrag[as.numeric(multipleRegressionDNAFrag$DNAFrag_pval) < 0.05, ]
+
+```
+
+```{r, echo=FALSE}
+#boxplot1 <- ggplot(subset(clrDataMatrix, `DNA Fragmentation` != 'No data'), aes(x=`DNA Fragmentation`, y=`Finegoldia`, color=`DNA Fragmentation`)) + #geom_boxplot(outlier.shape=NA, alpha=0.4) + theme_minimal() + geom_jitter(aes(color=`DNA Fragmentation`)) + scale_colour_discrete(name='DNA #Fragmentation') + xlab('DNA Fragmentation')
+
+#boxplot2 <- ggplot(subset(clrDataMatrix, `DNA Fragmentation` != 'No data'), aes(x=`DNA Fragmentation`, y=`Varibaculum`, color=`DNA Fragmentation`)) + #geom_boxplot(outlier.shape=NA, alpha=0.4) + theme_minimal() + geom_jitter(aes(color=`DNA Fragmentation`)) + scale_colour_discrete(name='DNA #Fragmentation') + xlab('DNA Fragmentation')
+
+#ggsave('../Analysis Figures/Regression_Analysis/Genera_Finegoldia_DNAFrag.svg', boxplot1, dpi=300)
+#ggsave('../Analysis Figures/Regression_Analysis/Genera_Varibaculum_DNAFrag.svg', boxplot2, dpi=300)
+``` 
+
+### DNA Fragmentation - Control vs Male Infertility
+```{r}
+multipleRegressionDNAFrag <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsDNAFrag, dataSet=subset(clrDataMatrix, Classification %in% c('Control', 'Male factor')))
+multipleRegressionDNAFrag <- as.data.frame(do.call(rbind, multipleRegressionDNAFrag))
+multipleRegressionDNAFrag$DNAFrag_qval <- p.adjust(as.numeric(multipleRegressionDNAFrag$DNAFrag_pval), method='BH')
+
+write.csv(multipleRegressionDNAFrag, '../Results/Regression_Analysis/DNAFragLM_GeneraControlvsMaleFactor.csv')
+
+multipleRegressionDNAFrag[as.numeric(multipleRegressionDNAFrag$DNAFrag_pval) < 0.05, ]
+
+```
+
+## Semen volume
+```{r}
+firstMicrobeColumnIdx <- 28
+
+lmModelsSemenVolume <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  
+  linearModel <- lm(get(currVar) ~ `Semen volume`, data=dataSet, na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Genera=currVar, SemenVolume_t = Modelsummary$coefficients[2, 3], SemenVolume_pval = Modelsummary$coefficients[2, 4])
+  return(ModelResults)
+}
+
+multipleRegressionSemenVolume <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsSemenVolume, dataSet=clrDataMatrix)
+multipleRegressionSemenVolume <- as.data.frame(do.call(rbind, multipleRegressionSemenVolume))
+multipleRegressionSemenVolume$SemenVolume_qval <- p.adjust(as.numeric(multipleRegressionSemenVolume$SemenVolume_pval), method='BH')
+
+write.csv(multipleRegressionSemenVolume, '../Results/Regression_Analysis/SemenVolumeLM_Genera.csv')
+
+multipleRegressionSemenVolume[as.numeric(multipleRegressionSemenVolume$SemenVolume_pval) < 0.05, ]
+```
+
+### Semen volume - Control vs Male Infertility
+```{r}
+multipleRegressionSemenVolume <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsSemenVolume, dataSet=subset(clrDataMatrix, Classification %in% c('Control', 'Male factor')))
+multipleRegressionSemenVolume <- as.data.frame(do.call(rbind, multipleRegressionSemenVolume))
+multipleRegressionSemenVolume$SemenVolume_qval <- p.adjust(as.numeric(multipleRegressionSemenVolume$SemenVolume_pval), method='BH')
+
+write.csv(multipleRegressionSemenVolume, '../Results/Regression_Analysis/SemenVolumeLM_GeneraControlvsMaleFactor.csv')
+
+multipleRegressionSemenVolume[as.numeric(multipleRegressionSemenVolume$SemenVolume_pval) < 0.05, ]
+
+```
+
+## Semen Quality
+```{r}
+firstMicrobeColumnIdx <- 28
+
+lmModelsSemenQuality <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  
+  linearModel <- lm(get(currVar) ~ `Semen quality`, data=dataSet, na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Genera=currVar, SemenQuality_t = Modelsummary$coefficients[2, 3], SemenQuality_pval = Modelsummary$coefficients[2, 4])
+  return(ModelResults)
+}
+
+multipleRegressionSemenQuality <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsSemenQuality, dataSet=clrDataMatrix)
+multipleRegressionSemenQuality <- as.data.frame(do.call(rbind, multipleRegressionSemenQuality))
+multipleRegressionSemenQuality$SemenQuality_qval <- p.adjust(as.numeric(multipleRegressionSemenQuality$SemenQuality_pval), method='BH')
+
+write.csv(multipleRegressionSemenQuality, '../Results/Regression_Analysis/SemenQualityLM_Genera.csv')
+
+multipleRegressionSemenQuality[as.numeric(multipleRegressionSemenQuality$SemenQuality_pval) < 0.05, ]
+```
+
+
+```{r, echo=FALSE}
+#boxplot1 <- ggplot(clrDataMatrix, aes(x=`Semen quality`, #y=`d__Bacteria;p__Bacteroidota;c__Bacteroidia;o__Flavobacteriales;f__Flavobacteriaceae;g__Flavobacterium`, color=`Semen quality`)) + #geom_boxplot(outlier.shape=NA, alpha=0.4) + theme_minimal() + geom_jitter(aes(color=`Semen quality`)) + scale_colour_discrete(name='Semen quality') + #xlab('Semen quality') + ylab('g_Flavobacterium')
+#ggsave('../Analysis Figures/Regression_Analysis/Genera_Flavobacterium_SemenQuality.svg', boxplot1, dpi=300)
+``` 
+
+### Semen Quality - Control vs Male Infertility 
+```{r}
+multipleRegressionSemenQuality <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsSemenQuality, dataSet=subset(clrDataMatrix, Classification %in% c('Control', 'Male factor')))
+multipleRegressionSemenQuality <- as.data.frame(do.call(rbind, multipleRegressionSemenQuality))
+multipleRegressionSemenQuality$SemenQuality_qval <- p.adjust(as.numeric(multipleRegressionSemenQuality$SemenQuality_pval), method='BH')
+
+write.csv(multipleRegressionSemenQuality, '../Results/Regression_Analysis/SemenQualityLM_GeneraControlvsMaleFactor.csv')
+
+multipleRegressionSemenQuality[as.numeric(multipleRegressionSemenQuality$SemenQuality_pval) < 0.05, ]
+```
+
+## Morphology
+```{r}
+firstMicrobeColumnIdx <- 28
+
+lmModelsMorphology <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  
+  linearModel <- lm(get(currVar) ~ `Morphology`, data=dataSet, na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Species=currVar, Morphology_t = Modelsummary$coefficients[2, 3], Morphology_pval = Modelsummary$coefficients[2, 4])
+  return(ModelResults)
+}
+
+multipleRegressionMorphology <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsMorphology, dataSet=subset(clrDataMatrix,`Morphology` != 'no data'))
+multipleRegressionMorphology <- as.data.frame(do.call(rbind, multipleRegressionMorphology))
+multipleRegressionMorphology$Morphology_qval <- p.adjust(as.numeric(multipleRegressionMorphology$Morphology_pval), method='BH')
+
+write.csv(multipleRegressionMorphology, '../Results/Regression_Analysis/MorphologyLM_Genera.csv')
+
+multipleRegressionMorphology[as.numeric(multipleRegressionMorphology$Morphology_qval) < 0.05, ]
+```
+
+
+### Morphology - MFI and Control only
+```{r}
+multipleRegressionMorphology <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsMorphology, dataSet=subset(clrDataMatrix, (Classification %in% c('Male factor', 'Control')) & (`Morphology` != 'no data')))
+multipleRegressionMorphology <- as.data.frame(do.call(rbind, multipleRegressionMorphology))
+multipleRegressionMorphology$Morphology_qval <- p.adjust(as.numeric(multipleRegressionMorphology$Morphology_pval), method='BH')
+
+write.csv(multipleRegressionMorphology, '../Results/Regression_Analysis/MorphologyLM_Genera_MFIControlOnly.csv')
+
+multipleRegressionMorphology[as.numeric(multipleRegressionMorphology$Morphology_qval) < 0.05, ]
+```
+
+## Concentration 
+```{r}
+firstMicrobeColumnIdx <- 28
+
+lmModelsConcentration <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  
+  linearModel <- lm(get(currVar) ~ `Concentration (million/ml)`, data=dataSet, na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Species=currVar, Concentration_t = Modelsummary$coefficients[2, 3], Concentration_pval = Modelsummary$coefficients[2, 4])
+  return(ModelResults)
+}
+
+multipleRegressionConcentration <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsConcentration, dataSet=clrDataMatrix)
+multipleRegressionConcentration <- as.data.frame(do.call(rbind, multipleRegressionConcentration))
+multipleRegressionConcentration$Concentration_qval <- p.adjust(as.numeric(multipleRegressionConcentration$Concentration_pval), method='BH')
+
+write.csv(multipleRegressionConcentration, '../Results/Regression_Analysis/ConcentrationLM_Genera.csv')
+
+multipleRegressionConcentration[as.numeric(multipleRegressionConcentration$Concentration_qval) < 0.05, ]
+```
+
+### Concentration - MFI and Control only
+```{r}
+multipleRegressionConcentration <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsConcentration, dataSet=subset(clrDataMatrix, (Classification %in% c('Male factor', 'Control')) & (`Morphology` != 'no data')))
+multipleRegressionConcentration <- as.data.frame(do.call(rbind, multipleRegressionConcentration))
+multipleRegressionConcentration$Concentration_qval <- p.adjust(as.numeric(multipleRegressionConcentration$Concentration_pval), method='BH')
+
+write.csv(multipleRegressionConcentration, '../Results/Regression_Analysis/ConcentrationLM_Genera_MFIControlOnly.csv')
+
+multipleRegressionConcentration[as.numeric(multipleRegressionConcentration$Concentration_qval) < 0.05, ]
+```
+
+
+## Study group differences
+```{r}
+firstMicrobeColumnIdx <- 28
+
+lmModelsStudyGroup <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  linearModel <- lm(get(currVar) ~ Classification , data=subset(dataSet, Classification != 'Female factor'), na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Species=currVar, StudyGroup_r2 = Modelsummary$r.squared, StudyGroup_r2_pval = anova(linearModel)$'Pr(>F)'[1])
+  return(ModelResults)
+}
+
+multipleRegressionStudyGroup <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsStudyGroup, dataSet=clrDataMatrix)
+multipleRegressionStudyGroup <- as.data.frame(do.call(rbind, multipleRegressionStudyGroup))
+multipleRegressionStudyGroup$StudyGroup_qval <- p.adjust(as.numeric(multipleRegressionStudyGroup$StudyGroup_r2_pval), method='BH')
+
+write.csv(multipleRegressionStudyGroup, '../Results/Regression_Analysis/StudyGroupLM_Genera.csv')
+
+multipleRegressionStudyGroup[as.numeric(multipleRegressionStudyGroup$StudyGroup_r2_pval) < 0.05, ]
+```
+### Study group differences - control vs MFI only
+```{r}
+firstMicrobeColumnIdx <- 28
+
+lmModelsStudyGroup <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  linearModel <- lm(get(currVar) ~ Classification , data=subset(dataSet, Classification %in% c('Male factor', 'Control')), na.action=na.exclude) 
+  
+  Modelsummary <- summary(linearModel)
+  ModelResults <- c(Species=currVar, StudyGroup_r2 = Modelsummary$r.squared, StudyGroup_r2_pval = anova(linearModel)$'Pr(>F)'[1])
+  return(ModelResults)
+}
+
+multipleRegressionStudyGroup <- bplapply(firstMicrobeColumnIdx:ncol(clrDataMatrix), FUN = lmModelsStudyGroup, dataSet=clrDataMatrix)
+multipleRegressionStudyGroup <- as.data.frame(do.call(rbind, multipleRegressionStudyGroup))
+multipleRegressionStudyGroup$StudyGroup_qval <- p.adjust(as.numeric(multipleRegressionStudyGroup$StudyGroup_r2_pval), method='BH')
+
+write.csv(multipleRegressionStudyGroup, '../Results/Regression_Analysis/StudyGroupLM_Genera_ControlvsMFI.csv')
+
+multipleRegressionStudyGroup[as.numeric(multipleRegressionStudyGroup$StudyGroup_r2_pval) < 0.05, ]
+```
+
+## Chisq Analysis for prevalence
+## Prevalence analysis - ROS
+```{r}
+firstMicrobeColumnIdx <- 30
+chiSqROS <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  dataSet[dataSet$`ROS` == "no data", "ROS"] <- NA
+
+  chisqTestResults <- chisq.test(table(dataSet[, currVar], dataSet$`ROS`), simulate.p.value = T, B = 1000)
+
+  ModelResults <- c(Genera=currVar, ROS_Chisq = chisqTestResults$statistic, ROS_Chisq_pval = chisqTestResults$p.value)
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleChiSQROS <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqROS, dataSet=detectMatrix)
+multipleChiSQROS <- as.data.frame(do.call(rbind, multipleChiSQROS))
+multipleChiSQROS$ROS_Chisq_qval <- p.adjust(as.numeric(multipleChiSQROS$ROS_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQROS, '../Results/Regression_Analysis/ROS_ChisqAnalysis_Genera.csv')
+
+multipleChiSQROS[as.numeric(multipleChiSQROS$ROS_Chisq_qval) < 0.05, ]
+```
+
+### Prevalence analysis - ROS - Control vs Male Infertility group
+```{r}
+multipleChiSQROS <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqROS, dataSet=subset(detectMatrix, Classification %in% c('Control', 'Male factor')))
+
+multipleChiSQROS <- as.data.frame(do.call(rbind, multipleChiSQROS))
+multipleChiSQROS$ROS_Chisq_qval <- p.adjust(as.numeric(multipleChiSQROS$ROS_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQROS, '../Results/Regression_Analysis/ROS_ChisqAnalysis_GeneraControlMaleFactor.csv')
+
+multipleChiSQROS[as.numeric(multipleChiSQROS$ROS_Chisq_qval) < 0.05, ]
+```
+
+## Prevalence analysis - DNA Fragmentation
+```{r}
+firstMicrobeColumnIdx <- 30
+
+chiSqDNAFrag <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  dataSet[dataSet$`DNA Fragmentation` == "No data", "DNA Fragmentation"] <- NA
+
+  chisqTestResults <- chisq.test(table(dataSet[, currVar], dataSet$`DNA Fragmentation`), simulate.p.value = T, B = 1000)
+
+  ModelResults <- c(Genera=currVar, DNAFrag_Chisq = chisqTestResults$statistic, DNAFrag_Chisq_pval = chisqTestResults$p.value)
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleChiSQDNAFrag <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqDNAFrag, dataSet=detectMatrix)
+multipleChiSQDNAFrag <- as.data.frame(do.call(rbind, multipleChiSQDNAFrag))
+multipleChiSQDNAFrag$DNAFrag_Chisq_qval <- p.adjust(as.numeric(multipleChiSQDNAFrag$DNAFrag_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQDNAFrag, '../Results/Regression_Analysis/DNAFrag_ChisqAnalysis_Genera.csv')
+
+multipleChiSQDNAFrag[as.numeric(multipleChiSQDNAFrag$DNAFrag_Chisq_pval) < 0.05, ]
+```
+
+### Prevalence analysis - DNA Fragmentation - Control vs Male Infertility only
+```{r}
+multipleChiSQDNAFrag <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqDNAFrag, dataSet=subset(detectMatrix, Classification %in% c('Control', 'Male factor')))
+multipleChiSQDNAFrag <- as.data.frame(do.call(rbind, multipleChiSQDNAFrag))
+multipleChiSQDNAFrag$DNAFrag_Chisq_qval <- p.adjust(as.numeric(multipleChiSQDNAFrag$DNAFrag_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQDNAFrag, '../Results/Regression_Analysis/DNAFrag_ChisqAnalysis_GeneraControlMaleFactor.csv')
+
+multipleChiSQDNAFrag[as.numeric(multipleChiSQDNAFrag$DNAFrag_Chisq_pval) < 0.05, ]
+```
+
+## Prevalence analysis - Semen Quality
+```{r}
+firstMicrobeColumnIdx <- 30
+chiSqSemenQuality <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+
+  chisqTestResults <- chisq.test(table(dataSet[, currVar], dataSet$`Semen quality`), simulate.p.value = T, B = 1000)
+
+  ModelResults <- c(Genera=currVar, SemenQuality_Chisq = chisqTestResults$statistic, SemenQuality_Chisq_pval = chisqTestResults$p.value)
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleChiSQSemenQuality <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqSemenQuality, dataSet=detectMatrix)
+multipleChiSQSemenQuality <- as.data.frame(do.call(rbind, multipleChiSQSemenQuality))
+multipleChiSQSemenQuality$SemenQuality_Chisq_qval <- p.adjust(as.numeric(multipleChiSQSemenQuality$SemenQuality_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQSemenQuality, '../Results/Regression_Analysis/SemenQuality_ChisqAnalysis_Genera.csv')
+
+multipleChiSQSemenQuality[multipleChiSQSemenQuality$SemenQuality_Chisq_pval < 0.05, ]
+```
+
+### Prevalence analysis - Semen Quality - Control vs Male Infertility only
+```{r}
+multipleChiSQSemenQuality <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqSemenQuality, dataSet=subset(detectMatrix, Classification %in% c('Control', 'Male factor')))
+multipleChiSQSemenQuality <- as.data.frame(do.call(rbind, multipleChiSQSemenQuality))
+multipleChiSQSemenQuality$SemenQuality_Chisq_qval <- p.adjust(as.numeric(multipleChiSQSemenQuality$SemenQuality_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQSemenQuality, '../Results/Regression_Analysis/SemenQuality_ChisqAnalysis_GeneraControlMaleFactor.csv')
+
+multipleChiSQSemenQuality[multipleChiSQSemenQuality$SemenQuality_Chisq_pval < 0.05, ]
+```
+
+## Prevalence analysis - Morphology
+```{r}
+firstMicrobeColumnIdx <- 30
+chiSqMorphology <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+
+  chisqTestResults <- chisq.test(table(dataSet[, currVar], dataSet$`Morphology`), simulate.p.value = T, B = 1000)
+
+  ModelResults <- c(Species=currVar, Morphology_Chisq = chisqTestResults$statistic, Morphology_Chisq_pval = chisqTestResults$p.value)
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleChiSQMorphology <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqMorphology, dataSet=subset(detectMatrix, `Morphology` != 'no data'))
+multipleChiSQMorphology <- as.data.frame(do.call(rbind, multipleChiSQMorphology))
+multipleChiSQMorphology$Morphology_Chisq_qval <- p.adjust(as.numeric(multipleChiSQMorphology$Morphology_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQMorphology, '../Results/Regression_Analysis/Morphology_ChisqAnalysis_Genera.csv')
+
+multipleChiSQMorphology[as.numeric(multipleChiSQMorphology$Morphology_Chisq_qval) < 0.05, ]
+```
+
+### Prevalence analysis - Morphology - MFI and Control only
+```{r}
+
+
+multipleChiSQMorphology <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqMorphology, dataSet=subset(detectMatrix, (Classification %in% c('Control', 'Male factor')) & (`Morphology` != 'no data')))
+multipleChiSQMorphology <- as.data.frame(do.call(rbind, multipleChiSQMorphology))
+multipleChiSQMorphology$Morphology_Chisq_qval <- p.adjust(as.numeric(multipleChiSQMorphology$Morphology_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQMorphology, '../Results/Regression_Analysis/Morphology_ChisqAnalysis_Genera_ControlMFI.csv')
+
+multipleChiSQMorphology[as.numeric(multipleChiSQMorphology$Morphology_Chisq_qval) < 0.05, ]
+```
+## Prevalence analysis - Concentration
+```{r}
+firstMicrobeColumnIdx <- 30
+chiSqConcentration <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+
+  chisqTestResults <- chisq.test(table(dataSet[, currVar], dataSet$`Concentration`), simulate.p.value = T, B = 1000)
+
+  ModelResults <- c(Species=currVar, Concentration_Chisq = chisqTestResults$statistic, Concentration_Chisq_pval = chisqTestResults$p.value)
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleChiSQConcentration <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqConcentration, dataSet=detectMatrix)
+multipleChiSQConcentration <- as.data.frame(do.call(rbind, multipleChiSQConcentration))
+multipleChiSQConcentration$Concentration_Chisq_qval <- p.adjust(as.numeric(multipleChiSQConcentration$Concentration_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQConcentration, '../Results/Regression_Analysis/Concentration_ChisqAnalysis_Genera.csv')
+
+multipleChiSQConcentration[as.numeric(multipleChiSQConcentration$Concentration_Chisq_qval) < 0.05, ]
+```
+
+
+### Prevalence analysis - Concentration - MFI and Control only
+```{r}
+multipleChiSQConcentration <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqConcentration, dataSet=subset(detectMatrix, Classification %in% c('Control', 'Male factor')))
+multipleChiSQConcentration <- as.data.frame(do.call(rbind, multipleChiSQConcentration))
+multipleChiSQConcentration$Concentration_Chisq_qval <- p.adjust(as.numeric(multipleChiSQConcentration$Concentration_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQConcentration, '../Results/Regression_Analysis/Concentration_ChisqAnalysis_Genera_ControlMFI.csv')
+
+multipleChiSQConcentration[as.numeric(multipleChiSQConcentration$Concentration_Chisq_qval) < 0.05, ]
+```
+
+
+## Prevalence analysis between study groups
+```{r}
+firstMicrobeColumnIdx <- 30
+chiSqStudyGroup <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  dataSet <- subset(dataSet, Classification != 'Female factor')
+  chisqTestResults <- chisq.test(table(dataSet[, currVar], dataSet$`Classification`), simulate.p.value = T, B = 1000)
+
+  ModelResults <- c(Species=currVar, StudyGroup_Chisq = chisqTestResults$statistic, StudyGroup_Chisq_pval = chisqTestResults$p.value)
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleChiSQStudyGroup <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqStudyGroup, dataSet=detectMatrix)
+multipleChiSQStudyGroup <- as.data.frame(do.call(rbind, multipleChiSQStudyGroup))
+multipleChiSQStudyGroup$StudyGroup_Chisq_qval <- p.adjust(as.numeric(multipleChiSQStudyGroup$StudyGroup_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQStudyGroup, '../Results/Regression_Analysis/StudyGroup_ChisqAnalysis_Genera.csv')
+
+multipleChiSQStudyGroup[as.numeric(multipleChiSQStudyGroup$StudyGroup_Chisq_pval) < 0.05, ]
+```
+
+## Prevalence analysis between study groups
+```{r}
+firstMicrobeColumnIdx <- 30
+chiSqStudyGroup <- function(dataSet, varIdx) {
+  
+  currVar <- colnames(dataSet)[varIdx]
+  dataSet <- subset(dataSet, Classification %in% c('Male factor', 'Control'))
+  chisqTestResults <- chisq.test(table(dataSet[, currVar], dataSet$`Classification`), simulate.p.value = T, B = 1000)
+
+  ModelResults <- c(Species=currVar, StudyGroup_Chisq = chisqTestResults$statistic, StudyGroup_Chisq_pval = chisqTestResults$p.value)
+  return(ModelResults)
+}
+
+multicoreParam <- MulticoreParam()
+
+multipleChiSQStudyGroup <- bplapply(firstMicrobeColumnIdx:ncol(detectMatrix), FUN = chiSqStudyGroup, dataSet=detectMatrix)
+multipleChiSQStudyGroup <- as.data.frame(do.call(rbind, multipleChiSQStudyGroup))
+multipleChiSQStudyGroup$StudyGroup_Chisq_qval <- p.adjust(as.numeric(multipleChiSQStudyGroup$StudyGroup_Chisq_pval), method='BH')
+
+write.csv(multipleChiSQStudyGroup, '../Results/Regression_Analysis/StudyGroup_ChisqAnalysis_Genera_MFIvsControl.csv')
+
+multipleChiSQStudyGroup[as.numeric(multipleChiSQStudyGroup$StudyGroup_Chisq_pval) < 0.05, ]
+```

@@ -1,0 +1,12 @@
+# How to sort create the custom V1MixedV2 primer set SILVA Naive Bayes classifier with QIIME2
+
+qiime rescript get-silva-data --p-version '138.1' --p-target 'SSURef_NR99' --p-include-species-labels --o-silva-sequences silva-138.1-ssu-nr99-rna-seqs.qza --o-silva-taxonomy silva-138.1-ssu-nr99-tax.qza
+
+qiime rescript reverse-transcribe --i-rna-sequences silva-138.1-ssu-nr99-rna-seqs.qza --o-dna-sequences silva-138.1-ssu-nr99-seqs.qza
+
+qiime rescript cull-seqs --i-sequences silva-138.1-ssu-nr99-seqs.qza --o-clean-sequences silva-138.1-ssu-nr99-seqs-cleaned.qza
+
+#V1-mixed-V2-388R primer set parameters
+qiime feature-classifier extract-reads --i-sequences silva-138.1-ssu-nr99-seqs-cleaned.qza --p-f-primer GRRTTYGATYHTGGYTYAG --p-r-primer TGCTGCCTCCCGTAGGAGT --p-min-length 100 --p-max-length 400 --p-trunc-len 305 --p-n-jobs 2 --p-read-orientation 'forward' --o-reads silva-138.1-ssu-nr99-seqs-V1V2Mixed.qza
+
+qiime feature-classifier fit-classifier-naive-bayes --i-reference-reads silva-138.1-ssu-nr99-seqs-V1V2Mixed.qza --i-reference-taxonomy silva-138.1-ssu-nr99-tax.qza --o-classifier silva-138.1-ssu-nr99-V1V2MixProc-classifier.qza

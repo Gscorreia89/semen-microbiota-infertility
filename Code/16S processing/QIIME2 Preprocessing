@@ -1,0 +1,76 @@
+#!/bin/bash
+
+# Import the Primmer trimmed (using cutadapt) sequences into QIIME2
+qiime tools import --type SampleData[PairedEndSequencesWithQuality] --input-path QIIME2_manifest_SemenProject.txt --output-path Run6631-PTrimV1MixedV2.qza --input-format PairedEndFastqManifestPhred33V2
+
+qiime demux summarize --i-data Run6631-PTrimV1MixedV2.qza --o-visualization Run6631-PTrimV1MixedV2.qzv
+
+# DADA denoised
+qiime dada2 denoise-paired --i-demultiplexed-seqs Run6631-PTrimV1MixedV2.qza --p-trim-left-f 0 --p-trunc-len-f 210 --p-trim-left-r 0 --p-trunc-len-r 175 --p-n-threads 10 --p-max-ee-r 2 --o-representative-sequences Run6631-PTrimV1MixedV2-rep-seqs-dada2.qza --o-table Run6631-PTrimV1MixedV2-table-dada2.qza --o-denoising-stats Run6631-PTrimV1MixedV2-stats-dada2.qza
+
+# Generate dada2 stats
+qiime metadata tabulate --m-input-file  Run6631-PTrimV1MixedV2-stats-dada2.qza --o-visualization  Run6631-PTrimV1MixedV2-stats-dada2.qzv
+
+# Generate dada2 counts
+qiime feature-table summarize --i-table Run6631-PTrimV1MixedV2-table-dada2.qza --o-visualization Run6631-PTrimV1MixedV2-table.qzv
+
+# Generate dada 2 ASV seqs
+qiime feature-table tabulate-seqs --i-data Run6631-PTrimV1MixedV2-rep-seqs-dada2.qza --o-visualization Run6631-PTrimV1MixedV2-rep-seqs-dada2.qzv
+
+
+# Classify taxonomy using the SILVA Naive Bayes
+qiime feature-classifier classify-sklearn --i-classifier ./qiime2-classifiers/SILVA/silva-138.1-ssu-nr99-V1V2MixProc-classifier.qza --i-reads Run6631-PTrimV1MixedV2-rep-seqs-dada2.qza --o-classification Run6631-SILVA-V1MixedV2-Taxonomy.qza
+
+qiime metadata tabulate --m-input-file Run6631-SILVA-V1MixedV2-Taxonomy.qza --o-visualization Run6631-PTrimV1MixedV2-CustomSILVA-Taxonomy.qzv
+
+
+qiime krona collapse-and-plot --i-table Run6631-PTrimV1MixedV2-table-dada2.qza --i-taxonomy Run6631-SILVA-V1MixedV2-Taxonomy.qza --o-krona-plot Run6631-CustomSILVA-Taxa-krona.qzv
+
+
+qiime tools export --input-path Run6631-PTrimV1MixedV2-table-dada2.qza --output-path ./3361-ASV-Outputs-V1MixedV2-SILVA/
+
+biom convert -i ./3361-ASV-Outputs-V1MixedV2-SILVA/feature-table.biom -o ./3361-ASV-Outputs-V1MixedV2-SILVA/table.tsv --to-tsv
+
+
+### At this stage, use decontam in R and re-upload --- re-upload here.
+
+# Load decontam outputs
+qiime tools import --input-path ./3361-ASV-Outputs-V1MixedV2-SILVA/table-decontam-filtered.biom --type 'FeatureTable[Frequency]' --input-format BIOMV100Format --output-path ./Run6631-PTrimV1MixedV2-table-decontam.qza
+
+qiime feature-table summarize --i-table ./Run6631-PTrimV1MixedV2-table-decontam.qza --o-visualization Run6631-PTrimV1MixedV2-table-decontam.qzv
+
+# Filtered taxonomic barplot 
+qiime taxa barplot   --i-table ./Run6631-PTrimV1MixedV2-table-decontam.qza --i-taxonomy ./Run6631-SILVA-V1MixedV2-Taxonomy.qza --o-visualization ./Run6631-SILVA-V1MixedV2-TaxaBarPlots.qzv
+
+qiime feature-table filter-seqs --i-data Run6631-PTrimV1MixedV2-rep-seqs-dada2.qza --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --p-no-exclude-ids --o-filtered-data Run6631-PTrimV1MixedV2-rep-seqs-decontam.qza
+
+qiime feature-table tabulate-seqs --i-data Run6631-PTrimV1MixedV2-rep-seqs-decontam.qza --o-visualization Run6631-PTrimV1MixedV2-rep-seqs-decontam.qzv
+
+
+# Export Species level
+qiime taxa collapse --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --i-taxonomy Run6631-SILVA-V1MixedV2-Taxonomy.qza --p-level 7 --o-collapsed-table Run6631-PTrimV1MixedV2-CustomSILVA-table-species.qza
+
+qiime tools export --input-path Run6631-PTrimV1MixedV2-CustomSILVA-table-species.qza --output-path ./3361-ASV-Outputs-V1MixedV2-SILVA/Species/
+
+biom convert -i ./3361-ASV-Outputs-V1MixedV2-SILVA/Species/feature-table.biom -o ./3361-ASV-Outputs-V1MixedV2-SILVA/Species/table.tsv --to-tsv
+
+# Export Genera level
+qiime taxa collapse --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --i-taxonomy Run6631-SILVA-V1MixedV2-Taxonomy.qza --p-level 6 --o-collapsed-table Run6631-PTrimV1MixedV2-CustomSILVA-table-genera.qza
+
+qiime tools export --input-path Run6631-PTrimV1MixedV2-CustomSILVA-table-genera.qza --output-path ./3361-ASV-Outputs-V1MixedV2-SILVA/Genera/
+
+biom convert -i ./3361-ASV-Outputs-V1MixedV2-SILVA/Genera/feature-table.biom -o ./3361-ASV-Outputs-V1MixedV2-SILVA/Genera/table.tsv --to-tsv
+
+
+# Phylo-tree
+qiime phylogeny align-to-tree-mafft-fasttree --i-sequences Run6631-PTrimV1MixedV2-rep-seqs-decontam.qza --output-dir 6631-PhyloTree
+
+qiime diversity alpha-phylogenetic --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --i-phylogeny ./6631-PhyloTree/rooted_tree.qza --p-metric faith_pd --o-alpha-diversity faith_pd_vector.qza
+
+qiime diversity alpha --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --p-metric shannon --o-alpha-diversity alpha_shannon_vector.qza
+qiime diversity alpha --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --p-metric observed_features --o-alpha-diversity alpha_obs_features_vector.qza
+qiime diversity alpha --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --p-metric simpson_e --o-alpha-diversity alpha_simpson_e_vector.qza
+qiime diversity alpha --i-table Run6631-PTrimV1MixedV2-table-decontam.qza --p-metric simpson --o-alpha-diversity alpha_simpson_vector.qza
+
+
+

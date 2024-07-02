@@ -1,0 +1,153 @@
+---
+title: "Semen microbiome - Co-occurrence Analysis"
+output: html_notebook
+---
+
+```{r "setup", include=FALSE}
+require("knitr")
+opts_knit$set(root.dir='./')
+```
+
+Import the required packages
+```{r, include=FALSE}
+library(readr)
+library(readxl)
+library(ggplot2)
+library(BiocParallel)
+library(propr)
+library(SpiecEasi)
+library(igraph)
+library(tidygraph)
+library(ggraph)
+library(qgraph)
+library(Matrix)
+
+dir.create('../Analysis Figures/Co-Occurrence Analysis/')
+```
+
+
+Load the  16S data matrix
+```{r, message=FALSE, warning=FALSE}
+
+# Read the 16Sdataset
+semen16s_SpeciesLevel <- read_csv("../../Data/Species_Counts_Table.csv")
+
+semen16s_speciesInfo <- read_csv("../../Data/Species_Taxonomy.csv")
+
+# Load the study covariates
+studyMetadata <- read_csv("../../Data/ClinicalData.csv")
+```
+
+
+```{r}
+# Percentage of samples containing counts (> 0) from a species to keep
+minRelAbundance <- 0.01
+
+RelAbundanceMatrix <- semen16s_SpeciesLevel[, 4:ncol(semen16s_SpeciesLevel)]/rowSums(semen16s_SpeciesLevel[, 4:ncol(semen16s_SpeciesLevel)])
+
+RelAbundanceMeans <- colMeans(RelAbundanceMatrix)
+
+# Column index for features passing relativa abundance filter
+columnsPassRelAbundance <- names(which(RelAbundanceMeans >= minRelAbundance))
+columnsFailRelAbundance <- names(which(RelAbundanceMeans < minRelAbundance))
+```
+
+
+```{r}
+# Clean the name of the taxon
+taxaNameParser <- function(columnName, taxonLevel=7) {
+  parsedName <- unlist(stringi::stri_split(columnName, fixed=';'))
+  
+  taxonName <- stringi::stri_sub(parsedName[taxonLevel], 4)
+  
+  taxonLevel <- taxonLevel - 1
+  
+  while (taxonName == '' | taxonName == '__') {
+    
+    taxonName <- paste0(stringi::stri_sub(parsedName[taxonLevel]))
+    taxonLevel <- taxonLevel - 1
+    
+  }
+
+  if (as.logical(grepl('uncultured', taxonName )) | as.logical(grepl('marine', taxonName )) | as.logical(grepl('unidentified', taxonName))) {    taxonName <- paste0(stringi::stri_sub(parsedName[taxonLevel]), stringi::stri_sub(parsedName[taxonLevel + 1], 2)) }
+   taxonName <- gsub("__", "_", taxonName)
+  return(taxonName)
+}
+```
+
+# SparCC analysis
+```{r}
+CustomLabels <- colnames(semen16s_SpeciesLevel[, columnsPassRelAbundance])
+CustomLabels <- as.character(sapply(CustomLabels, taxaNameParser, taxonLevel=7))
+
+sparcc_semen <- sparcc(as.matrix(semen16s_SpeciesLevel[, columnsPassRelAbundance]))
+
+set.seed(23458629)
+
+sparcc_semen_boot <- sparccboot(as.matrix(semen16s_SpeciesLevel[, columnsPassRelAbundance]), R=10000, ncpus=5)
+
+sparcc_semen_bootres <- pval.sparccboot(sparcc_semen_boot)
+
+cors <- sparcc_semen_bootres$cors
+sparCCpcors <- diag(0.5, nrow = dim(sparcc_semen$Cor)[1], ncol = dim(sparcc_semen$Cor)[1])
+sparCCpcors[upper.tri(sparCCpcors, diag=FALSE)] <- cors
+sparCCpcors <- sparCCpcors + t(sparCCpcors)
+
+rownames(sparCCpcors) <- CustomLabels
+colnames(sparCCpcors) <- CustomLabels
+
+pvals <- sparcc_semen_bootres$pvals
+sparCCpval <- diag(0.5, nrow = dim(sparcc_semen$Cor)[1], ncol = dim(sparcc_semen$Cor)[1])
+sparCCpval[upper.tri(sparCCpval, diag=FALSE)] <- pvals
+sparCCpval <- sparCCpval + t(sparCCpval)
+
+rownames(sparCCpval) <- CustomLabels
+colnames(sparCCpval) <- CustomLabels
+
+sparcc_semen_graph <- sparCCpcors
+diag(sparcc_semen_graph) <- 0
+
+# Remove non-significant edges
+sparcc_semen_graph[sparCCpval >= 0.05] <- 0 
+# Remove correlations below 0.25
+sparcc_semen_graph[abs(sparcc_semen_graph) <= 0.25] <- 0
+
+sparcc_semen_graph <- Matrix(sparcc_semen_graph, sparse=TRUE)
+
+igraph_sparcc <- adj2igraph(sparcc_semen_graph, diag=F, vertex.attr=list(name=CustomLabels))
+
+# Remove isolated taxa
+isolated <- which(degree(igraph_sparcc) == 0)
+igraph_sparcc <- delete_vertices(igraph_sparcc, isolated)
+
+graphCommunities <- cluster_louvain(igraph_sparcc, weights=NA)
+
+# am.coord <- layout_with_fr(igraph_sparcc, weights=NA)
+am.coord <- qgraph.layout.fruchtermanreingold(get.edgelist(igraph_sparcc,names=FALSE), vcount = vcount(igraph_sparcc), 
+                                              area=8*(vcount(igraph_sparcc)^2))
+
+communityDF <- data.frame(cbind(name=names(membership(graphCommunities)), Community=as.numeric(membership(graphCommunities))))
+
+graph_tbl_SemenMicrobiome <- igraph_sparcc %>% 
+  as_tbl_graph()  %>% 
+  activate(nodes)  %>% left_join(communityDF, by='name')
+
+# use the  layouts from igraph
+layout_semenMicrobiome <- create_layout(graph_tbl_SemenMicrobiome, layout = 'manual', x=am.coord[, 1], y=am.coord[,2 ])
+
+networkSemenMicrobiome <- ggraph(layout_semenMicrobiome) +
+  geom_edge_link(aes(color = weight, edge_linewidth=abs(weight)), show.legend = T, alpha=0.6)  +  
+  geom_node_circle(aes(r=2.5, fill=Community, colour=Community), alpha=1) +  
+  geom_node_text(aes(label = name), col='gray25', repel = T, fontface=3, size=6) + 
+  scale_edge_colour_gradient2(name='SparCC \u03C1', low = "firebrick3", mid = "white", high = "darkgreen", midpoint = 0,  space = "Lab", na.value = "grey50", guide = "edge_colourbar", aesthetics = "edge_colour") + 
+  theme_graph() +  scale_edge_width(range = c(0.2, 2), guide = "none") + 
+  theme(legend.text = element_text(size = 16,  family="sans-serif"), legend.title=element_text(size=18, family="sans-serif"), 
+  legend.key.width=unit(2, 'cm'), legend.key.height = unit(2.5, 'cm')) + 
+ # guides(colour="none", fill="none") + 
+  scale_fill_manual(values=list("1"="tan1", "2"="darkslategray2", "3"="gold1", "4"="aquamarine2", "5"="orchid2"))  + 
+  scale_color_manual(values=list("1"="tan1", "2"="darkslategray2", "3"="gold1", "4"="aquamarine2", "5"="orchid2"))
+networkSemenMicrobiome
+
+ggsave('../Analysis Figures/Co-Occurrence Analysis/NetworkCoOccurrence.svg', networkSemenMicrobiome, dpi=300, width=18, height=16)
+ggsave('../Analysis Figures/Co-Occurrence Analysis/NetworkCoOccurrence.png', networkSemenMicrobiome, dpi=300, width=18, height=16)
+```

@@ -1,0 +1,83 @@
+"","Kingdom","Phylum","Class","Order","Family","Genus","Species"
+"f17d3da8eb98435912cf7cfb2d1bfbdb","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Propionibacteriales"," f__Propionibacteriaceae"," g__Cutibacterium",NA
+"c583691d16154c22f1e985ff3d44f05c","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Lactobacillaceae"," g__Lactobacillus"," s__Lactobacillus_gasseri"
+"659f4aad449a0d857e134cd1729dc6df","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Burkholderiaceae"," g__Burkholderia-Caballeronia-Paraburkholderia",NA
+"7853ba582729d6f9389b4602663d97c2","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Finegoldia",NA
+"a49479d0ad8db142368d0b6baefdad35","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Finegoldia",NA
+"d1e6ed0bbb17def709606e1e069a5138","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Oxalobacteraceae",NA,NA
+"077505e7b08665f17cd134c31c7f8f14","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Streptococcaceae"," g__Streptococcus"," s__Streptococcus_mitis"
+"ecc5397a2c374500fdad3a45feea9d43","d__Bacteria"," p__Fusobacteriota"," c__Fusobacteriia"," o__Fusobacteriales"," f__Fusobacteriaceae"," g__Fusobacterium"," s__Fusobacterium_nucleatum"
+"ae34bbed44115ce2f30ca841f0efb8aa","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Streptococcaceae"," g__Streptococcus",NA
+"e0cca64497a3ad5927541312b65330d5","d__Bacteria"," p__Synergistota"," c__Synergistia"," o__Synergistales"," f__Synergistaceae"," g__Pyramidobacter"," s__uncultured_bacterium"
+"38f33cf3c8e66185c3e91aa40395c74a","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Rhizobiales"," f__Beijerinckiaceae"," g__Methylobacterium-Methylorubrum"," s__Methylorubrum_populi"
+"d5cd8ee7777c4a9c8460f026c0de7e2e","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Actinomycetales"," f__Actinomycetaceae"," g__Actinotignum"," s__uncultured_microorganism"
+"1ff2519c2a8fcf3fe98a3e1a39c86964","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Pseudomonadales"," f__Moraxellaceae"," g__Enhydrobacter"," s__Moraxella_osloensis"
+"1924228b08c4c3c615bfe160fb23a8d1","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Aerococcaceae"," g__Aerococcus"," s__Aerococcus_sanguinicola"
+"5935eb8a22892d7b52942da8bd6080a0","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Finegoldia",NA
+"0a7f65c0f300374b7df37a76f185a18f","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Peptoniphilus"," s__Peptoniphilus_lacrimalis"
+"9532194be6854570a1b9c4eab2a847ce","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Micrococcales"," f__Micrococcaceae"," g__Micrococcus",NA
+"a723e6fbeef9fab72bbe8e01b4630480","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Finegoldia"," s__Finegoldia_magna"
+"7d0d1ba7cfa0cf6e6ac9be11d1539dbf","d__Bacteria"," p__Fusobacteriota"," c__Fusobacteriia"," o__Fusobacteriales"," f__Leptotrichiaceae"," g__Sneathia"," s__Sneathia_sanguinegens"
+"c1705293e84e3e6be8f0a9974d70bce7","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Actinomycetales"," f__Actinomycetaceae"," g__Actinotignum"," s__uncultured_microorganism"
+"ee4207e4a7f717e5dea8d62309aa6295","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Corynebacteriales"," f__Corynebacteriaceae"," g__Corynebacterium"," s__Corynebacterium_tuberculostearicum"
+"a25c7b45f8cb57b7d7b26d803130a6dc","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Staphylococcales"," f__Staphylococcaceae"," g__Staphylococcus",NA
+"c2c42d58357c7fbf906b85c75434f125","d__Bacteria"," p__Fusobacteriota"," c__Fusobacteriia"," o__Fusobacteriales"," f__Fusobacteriaceae"," g__Fusobacterium"," s__Fusobacterium_nucleatum"
+"e73eb13f91365156dcb49eb49b7658ca","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Staphylococcales"," f__Staphylococcaceae"," g__Staphylococcus",NA
+"17cb1e3fe2f7b4009be0d10c9f835566","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Pseudomonadales"," f__Pseudomonadaceae"," g__Pseudomonas"," s__Pseudomonas_stutzeri"
+"efdda6681a2844a38e9ad2e446d978e4","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Corynebacteriales"," f__Corynebacteriaceae"," g__Corynebacterium",NA
+"41fe7fde7c8ea255d4a0c2bf3bb91d22","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Micrococcales"," f__Micrococcaceae"," g__Kocuria",NA
+"1a658e08896307655571b828af1c6d3a","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Rhodobacterales"," f__Rhodobacteraceae"," g__Paracoccus",NA
+"e791beadef8a1e21196f573bd5357675","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Sutterellaceae"," g__Sutterella"," s__uncultured_bacterium"
+"74c993ff7a7d4fc65a9b1fda57e8936a","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Corynebacteriales"," f__Corynebacteriaceae"," g__Corynebacterium"," s__Corynebacterium_aurimucosum"
+"2a1425f340b26ff6f403446c2997ee51","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Staphylococcales"," f__Staphylococcaceae"," g__Staphylococcus"," s__Staphylococcus_haemolyticus"
+"81c40134e65e9b85005d14adf22349d3","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Micrococcales"," f__Brevibacteriaceae"," g__Brevibacterium"," s__Brevibacterium_mcbrellneri"
+"ce0053ba60f9a19296ef884b07de5fdc","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Micrococcales"," f__Micrococcaceae"," g__Kocuria",NA
+"5feee0e8e9ce1bd1d3f7c4bb1a89a139","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Sphingomonadales"," f__Sphingomonadaceae"," g__Sphingomonas"," s__Sphingomonas_melonis"
+"579dac8b9a108d00f6e54cd979d5f80a","d__Bacteria"," p__Firmicutes"," c__Negativicutes"," o__Veillonellales-Selenomonadales"," f__Veillonellaceae"," g__Dialister"," s__Dialister_micraerophilus"
+"25b79ebc3bb19d262ae7076e852c8d33","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Staphylococcales"," f__Staphylococcaceae"," g__Staphylococcus"," s__Staphylococcus_lugdunensis"
+"7bd5ac1ef4d7794cb93907308cd9227b","d__Bacteria"," p__Actinobacteriota",NA,NA,NA,NA,NA
+"2840d1a240afbe58c2c9fd5c47381935","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Anaerococcus"," s__Anaerococcus_sp."
+"75f6615b2e83415ed7cc069e088fc649","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Streptococcaceae"," g__Streptococcus",NA
+"2ba5c6288eb5b3b5c12bf0b12d30fce3","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Comamonadaceae"," g__Rhodoferax",NA
+"d9900916c26029433ca46aa22ae85aa3","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Sphingomonadales"," f__Sphingomonadaceae"," g__Novosphingobium",NA
+"2a51fb99d80b81c2edff13e04973c678","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Neisseriaceae"," g__uncultured"," s__uncultured_bacterium"
+"2d8c2f8ca0c01fd43e4661c48a414de1","d__Bacteria"," p__Bacteroidota"," c__Bacteroidia"," o__Sphingobacteriales"," f__NS11-12_marine_group"," g__NS11-12_marine_group"," s__uncultured_Cytophagales"
+"55e511af761aa5ea76777a7a204dde4c","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Staphylococcales"," f__Staphylococcaceae"," g__Staphylococcus",NA
+"862eb6bd3155888fa999aac726a49475","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Ezakiella"," s__Finegoldia_magna"
+"348fea31d133f71c173a744755140849","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Streptococcaceae"," g__Streptococcus",NA
+"62ced4162ca1251dc2734aa0ea52d3b5","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Enterobacterales"," f__Enterobacteriaceae"," g__Escherichia-Shigella",NA
+"5f675ad0c48515802c313b0f168216eb","d__Bacteria"," p__Firmicutes"," c__Negativicutes"," o__Veillonellales-Selenomonadales"," f__Veillonellaceae"," g__Negativicoccus"," s__Negativicoccus_massiliensis"
+"2a23aa2a9ecbe481926766b3ed28925d","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Pseudomonadales"," f__Moraxellaceae"," g__Acinetobacter",NA
+"1266c2782954be1e24b4e6a8f87a9893","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Lachnospirales"," f__Lachnospiraceae"," g__Oribacterium"," s__Eubacterium_sp."
+"bcb24037349a1e81122c9130072baa6b","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Comamonadaceae"," g__Variovorax",NA
+"8dc251bbebbb9b346268d68733e46519","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Streptococcaceae"," g__Streptococcus"," s__Streptococcus_anginosus"
+"704b0562870bdbba386b945c1b6516cd","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Staphylococcales"," f__Staphylococcaceae"," g__Staphylococcus"," s__Staphylococcus_haemolyticus"
+"ff87bb0cd1673291c829aa2514f7f416","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Frankiales"," f__Frankiaceae"," g__Frankia"," s__Frankia_sp."
+"0d939927f32a501b9d1f09944b5a72ec","d__Bacteria"," p__Patescibacteria"," c__Saccharimonadia"," o__Saccharimonadales",NA,NA,NA
+"ce084c65deb3ea0fc56b9965dd6b026e","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Peptostreptococcales-Tissierellales"," f__Family_XI"," g__Anaerococcus"," s__uncultured_Peptostreptococcus"
+"f78d0600fadc8e5779225891f4f1fa2f","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales",NA,NA,NA
+"4d591af940e3c6b0f036bf3c1318bc08","d__Bacteria"," p__Cyanobacteria"," c__Cyanobacteriia"," o__Chloroplast"," f__Chloroplast"," g__Chloroplast",NA
+"1294a9d775ed253667319a7831bab9d8","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Comamonadaceae",NA,NA
+"8f44b040c7ca31e4140c10b615e21357","d__Bacteria"," p__Patescibacteria"," c__Gracilibacteria"," o__Candidatus_Peribacteria"," f__Candidatus_Peribacteria"," g__Candidatus_Peribacteria"," s__metagenome"
+"5355b1f4c77b473d95b220af12becf7d","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Oxalobacteraceae"," g__Duganella",NA
+"2cad140b81e5981246bee96cf0482978","d__Bacteria"," p__Bacteroidota"," c__Bacteroidia"," o__Bacteroidales"," f__Prevotellaceae"," g__Prevotella"," s__Prevotella_bergensis"
+"4a33dd0630bb8220d64861000fa1ecd5","d__Bacteria"," p__Cyanobacteria"," c__Cyanobacteriia"," o__Cyanobacteriales"," f__Nostocaceae"," g__Calothrix_PCC-6303"," s__uncultured_bacterium"
+"0da008884ef70c58dfceeb6cbe6c9ff4","d__Bacteria"," p__Firmicutes"," c__Clostridia"," o__Lachnospirales"," f__Lachnospiraceae"," g__Roseburia"," s__Roseburia_intestinalis"
+"f9c3bb110d8371d4c32c2b9b8626f494","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Pseudomonadales"," f__Moraxellaceae"," g__Acinetobacter"," s__Acinetobacter_ursingii"
+"1ca53a822137a7f2d72828b0c8250751","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Streptococcaceae"," g__Streptococcus",NA
+"a7de3ba5bfe91e4348341c08b8b3794c","d__Bacteria"," p__Bacteroidota"," c__Bacteroidia"," o__Bacteroidales"," f__Porphyromonadaceae"," g__Porphyromonas"," s__uncultured_microorganism"
+"7a5e78373bca1c52c33dff496c6fa701","d__Bacteria"," p__Patescibacteria"," c__Parcubacteria"," o__Parcubacteria"," f__Parcubacteria"," g__Parcubacteria"," s__uncultured_bacterium"
+"c80755591e70e8c161f524d0e2c5018e","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Micrococcales"," f__Micrococcaceae"," g__Arthrobacter",NA
+"40dd03bfadc6647c1d86abfa7a0494b5","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Caulobacterales"," f__Caulobacteraceae"," g__Brevundimonas",NA
+"d974108b7509b26fa27086952fdcee10","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Bifidobacteriales"," f__Bifidobacteriaceae"," g__Bifidobacterium"," s__Bifidobacterium_bifidum"
+"3bed152d81cf8f6ddd3c7d42e969011f","d__Bacteria"," p__Cyanobacteria"," c__Cyanobacteriia"," o__Chloroplast"," f__Chloroplast"," g__Chloroplast",NA
+"a69244a81f573f301d115f637be67c32","d__Bacteria"," p__Firmicutes"," c__Bacilli"," o__Lactobacillales"," f__Streptococcaceae"," g__Streptococcus",NA
+"84be5279a17911084b0346ab0b952bc9","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Elsterales"," f__Elsteraceae"," g__Elstera"," s__Elstera_sp."
+"793b6ddbcf24e71a2cd9959829fda2dc","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Actinomycetales"," f__Actinomycetaceae"," g__Actinotignum"," s__Actinotignum_schaalii"
+"d7ab685e4ed298c80b9400d4a440f9e5","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Burkholderiales"," f__Neisseriaceae"," g__Kingella"," s__uncultured_bacterium"
+"32c75a07d686696853b6d9a12818aae1","d__Bacteria"," p__Actinobacteriota"," c__Actinobacteria"," o__Micrococcales"," f__Micrococcaceae"," g__Rothia"," s__Rothia_amarae"
+"80f6181a75c454ca294b38aec876a8e1","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Rhizobiales"," f__Beijerinckiaceae"," g__Methylobacterium-Methylorubrum"," s__Methylorubrum_extorquens"
+"70916de2b7769070772200754ae342fe","d__Bacteria"," p__Bacteroidota"," c__Bacteroidia"," o__Flavobacteriales"," f__Weeksellaceae"," g__Chryseobacterium"," s__Chryseobacterium_hominis"
+"c5d75b9e4e5be689154bfc696a9a0d0c","d__Bacteria"," p__Proteobacteria"," c__Gammaproteobacteria"," o__Pseudomonadales"," f__Moraxellaceae"," g__Acinetobacter",NA
+"538a2c5054c7e507357fdb38309c9b21","d__Bacteria"," p__Proteobacteria"," c__Alphaproteobacteria"," o__Rhodobacterales"," f__Rhodobacteraceae",NA,NA
+"baffc447b477e0a9988c172d224b7be6","d__Bacteria"," p__Actinobacteriota"," c__Acidimicrobiia"," o__Microtrichales"," f__uncultured"," g__uncultured"," s__metagenome"

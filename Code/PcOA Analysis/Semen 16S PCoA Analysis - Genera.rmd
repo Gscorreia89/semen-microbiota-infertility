@@ -1,0 +1,61 @@
+---
+title: "Semen microbiome - PcOA - Genera Level"
+output: html_notebook
+---
+
+
+```{r "setup", include=FALSE}
+require("knitr")
+opts_knit$set(root.dir='./')
+```
+
+### Import the required packages
+```{r, include=FALSE}
+library(readr)
+library(readxl)
+library(ggplot2)
+library(vegan)
+library(ecodist)
+
+dir.create('../Analysis Figures/PcOA', recursive = T)
+```
+
+### Load the 16S data matrix
+```{r, message=FALSE, warning=FALSE}
+# Read the 16Sdataset
+semen16s_GeneraLevel <- read_csv("../../Data/Genera_Counts_Table.csv" )
+
+communityClusters <- read_csv('../Results/CST_Analysis/Semen_CST_GeneraAssignments.csv')
+```
+
+## PCoA model at Genera Level
+```{r}
+PhyloseqFormatMatrix <- phyloseq::phyloseq(phyloseq::otu_table(semen16s_GeneraLevel[, 4:ncol(semen16s_GeneraLevel)], taxa_are_rows = F))
+bcDistMatrix <- phyloseq::distance(PhyloseqFormatMatrix, 'jsd')
+#bcDistMatrix <- vegdist(semen16s_GeneraLevel[, 2:ncol(semen16s_GeneraLevel)], method = "bray")
+
+# PCoA
+bcPCOAModel <- ecodist::pco(bcDistMatrix)
+
+# All components could be found here: 
+# bray_curtis_pcoa$vectors
+# But we only need the first two to demonstrate what we can do:
+PCOAScoresFrame <- data.frame(pcoa1 = bcPCOAModel$vectors[,1], 
+                                  pcoa2 = bcPCOAModel$vectors[,2])
+
+PCOAScoresFrame <- cbind(Cluster=communityClusters$CST, PCOAScoresFrame)
+
+# Create a plot
+bray_curtis_plot <- ggplot(data = PCOAScoresFrame, 
+                           aes(x=pcoa1, y=pcoa2, col=as.factor(Cluster))) +
+  geom_point() +
+  labs(x = "PCoA 1",
+       y = "PCoA 2", 
+       #title = "Bray-Curtis PCoA") +
+       title = 'JSD PCoA - Genera Level') + 
+  theme(title = element_text(size = 10))   + theme_classic()  +
+  scale_color_manual(name='Cluster', values = c("1" = "#e41a1c", "2"="#377eb8", "3"="#4daf4a"))
+
+ggsave('../Analysis Figures/PcOA/PCoA_GeneraLevel.svg', bray_curtis_plot, dpi=300)
+
+```
