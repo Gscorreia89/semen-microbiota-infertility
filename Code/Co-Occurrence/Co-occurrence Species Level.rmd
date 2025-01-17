@@ -52,7 +52,6 @@ columnsPassRelAbundance <- names(which(RelAbundanceMeans >= minRelAbundance))
 columnsFailRelAbundance <- names(which(RelAbundanceMeans < minRelAbundance))
 ```
 
-
 ```{r}
 # Clean the name of the taxon
 taxaNameParser <- function(columnName, taxonLevel=7) {
